@@ -4,153 +4,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TrackPro | Registro Profesional</title>
+    <title>AttendanceMaster | Gestión de Asistencia Profesional</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AttendanceMaster">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2>TrackPro</h2>
-                <button id="btn-add-person" class="btn-icon" title="Añadir Persona">+</button>
+                <h2>Attendance<span>Master</span></h2>
             </div>
-            <div class="search-box">
-                <input type="text" id="person-search" placeholder="Buscar persona...">
-            </div>
-            <nav id="person-list" class="nav-list">
-                <!-- Se llenará dinámicamente -->
+            <nav class="side-nav">
+                <button class="nav-item active" data-tab="register-tab">
+                    <span class="icon">📅</span> Registro Diario
+                </button>
+                <button class="nav-item" data-tab="evolution-tab">
+                    <span class="icon">📈</span> Evolución Anual
+                </button>
+                <button class="nav-item" id="btn-open-names-modal">
+                    <span class="icon">👥</span> Gestión de Nombres
+                </button>
+                <button class="nav-item" id="btn-open-config-modal">
+                    <span class="icon">⚙️</span> Copia y Portabilidad
+                </button>
             </nav>
-            <div class="sidebar-footer">
-                <small>Gestión Local Autorizada</small>
+            <div class="sidebar-info">
+                <p>Almacenamiento Local Activo</p>
+                <small id="db-status">Preparado</small>
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Header -->
-            <header class="main-header">
-                <h1 id="selected-person-name">Seleccione una persona</h1>
-                <div class="header-actions">
-                    <button id="btn-msg-report" class="btn secondary">Reporte Mensajería</button>
-                    <button id="btn-show-report" class="btn secondary">Imprimir Reporte</button>
-                    <button id="btn-open-form" class="btn primary">Nuevo Registro</button>
-                </div>
-            </header>
+            <!-- Tabs Content -->
 
-            <!-- Dashboard Stats -->
-            <section class="dashboard-grid">
-                <!-- Meta Mensual 55h -->
-                <div class="stat-card">
-                    <h3>Meta Mensual (55h)</h3>
-                    <div class="progress-wrapper">
-                        <div id="monthly-progress-bar" class="progress-bar" style="width: 0%"></div>
+            <!-- Tab 1: Registro Diario -->
+            <section id="register-tab" class="tab-content active">
+                <div class="hero-banner">
+                    <img src="hybrid_attendance_panoramic_hero_1770032181676.png" alt="AttendanceMaster Hero">
+                </div>
+                <header class="section-header">
+                    <div class="date-selector">
+                        <label for="meeting-date">Fecha de la Reunión:</label>
+                        <input type="date" id="meeting-date">
                     </div>
-                    <div class="stat-values">
-                        <span id="monthly-current">0h</span>
-                        <span id="monthly-target">Meta: 55h</span>
+                    <div class="summary-cards">
+                        <div class="sum-card">
+                            <span class="label">Presencial</span>
+                            <span class="value" id="val-presencial">0</span>
+                        </div>
+                        <div class="sum-card">
+                            <span class="label">Zoom</span>
+                            <span class="value" id="val-zoom">0</span>
+                        </div>
+                        <div class="sum-card total">
+                            <span class="label">Total</span>
+                            <span class="value" id="val-total">0</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="entry-grid">
+                    <!-- Presencial Column -->
+                    <div class="entry-column card">
+                        <h3>Asistencia Presencial</h3>
+                        <div class="form-group">
+                            <label>Hermanos/Hermanas/Peques (Total Presencial)</label>
+                            <input type="number" id="input-presencial" min="0" value="0" placeholder="Ej: 45"
+                                autocomplete="off">
+                        </div>
+                        <p class="hint">Anote aquí la suma total de personas presentes en la sala.</p>
+                    </div>
+
+                    <!-- Zoom Column -->
+                    <div class="entry-column card wide">
+                        <div class="card-header">
+                            <h3>Asistencia por Zoom</h3>
+                            <button id="btn-add-zoom" class="btn small">+ Añadir Conexión</button>
+                        </div>
+                        <div class="zoom-table-container">
+                            <table id="zoom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre (Asistente)</th>
+                                        <th width="100">Cnx.</th>
+                                        <th width="50">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="zoom-body">
+                                    <!-- Filas dinámicas aquí -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Cursos Acumulados -->
-                <div class="stat-card">
-                    <h3>Cursos del Mes</h3>
-                    <div class="stat-value big" id="monthly-courses">0</div>
-                    <p class="stat-desc">Acumulado mensual</p>
-                </div>
-
-                <!-- Gráfico Anual 600h -->
-                <div class="stat-card wide">
-                    <h3>Progreso Anual (Meta: 600h)</h3>
-                    <div class="chart-container">
-                        <canvas id="annual-chart"></canvas>
-                    </div>
-                    <div id="annual-status" class="annual-info">
-                        <!-- Info dinámica aquí -->
-                    </div>
+                <div class="save-actions" style="gap: 1rem;">
+                    <button id="btn-save-all" class="btn primary">Guardar Registro del Día</button>
+                    <button id="btn-open-report" class="btn secondary">📄 Generar Reporte</button>
                 </div>
             </section>
 
-            <!-- Table Section -->
-            <section class="records-section">
-                <div class="section-header">
-                    <h3>Últimos Registros</h3>
-                    <div class="filters">
-                        <input type="month" id="filter-month">
+            <!-- Tab 2: Evolución Anual -->
+            <section id="evolution-tab" class="tab-content">
+                <header class="section-header">
+                    <h1>Evolución Anual Asistencia</h1>
+                    <div class="year-selector">
+                        <select id="select-year"></select>
                     </div>
-                </div>
-                <div class="table-container">
-                    <table id="records-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Horas</th>
-                                <th>Cursos</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="records-body">
-                            <!-- Filas dinámicas -->
-                        </tbody>
-                    </table>
+                </header>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Tendencia de Asistencia</h3>
+                        <div class="canvas-wrapper">
+                            <canvas id="annual-evolution-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="stats-footer">
+                        <div class="footer-stat">
+                            <span class="label">Máximo Asistentes</span>
+                            <span class="value" id="stat-max">0</span>
+                        </div>
+                        <div class="footer-stat">
+                            <span class="label">Promedio Mensual</span>
+                            <span class="value" id="stat-avg">0</span>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
     </div>
 
-    <!-- Modals -->
-    <div id="modal-person" class="modal">
-        <div class="modal-content">
-            <h3 id="modal-person-title">Nueva Persona</h3>
-            <form id="form-person">
-                <input type="hidden" id="edit-person-id">
-                <div class="form-group">
-                    <label>Nombre Completo</label>
-                    <input type="text" id="person-name" required>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn close-modal">Cancelar</button>
-                    <button type="submit" class="btn primary">Guardar</button>
-                </div>
-            </form>
+    <!-- Modals or Datalist for suggestions -->
+    <datalist id="suggested-names">
+        <!-- Se llenará dinámicamente -->
+    </datalist>
+
+    <!-- Modal: Gestión de Nombres -->
+    <div id="modal-names" class="modal">
+        <div class="modal-content wide">
+            <h3>Gestión Maestra de Nombres</h3>
+            <p class="hint">Pegue aquí la lista de nombres (uno por línea) para que aparezcan como sugerencias.</p>
+            <div class="form-group">
+                <textarea id="import-names-area" placeholder="Ej:&#10;Juan Perez&#10;Maria Garcia&#10;Pedro Lopez"
+                    rows="10"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn secondary close-modal">Cerrar</button>
+                <button type="button" id="btn-save-names" class="btn primary">Guardar Nombres</button>
+            </div>
         </div>
     </div>
 
-    <div id="modal-entry" class="modal">
-        <div class="modal-content">
-            <h3>Registrar Actividad</h3>
-            <form id="form-entry">
-                <input type="hidden" id="edit-entry-id">
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <input type="date" id="entry-date" required>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Horas</label>
-                        <input type="number" id="entry-hours" step="0.5" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nº de Cursos</label>
-                        <input type="number" id="entry-courses" min="0" required>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn close-modal">Cancelar</button>
-                    <button type="submit" class="btn primary">Guardar</button>
-                </div>
-            </form>
+    <!-- Modal: Reporte Profesional -->
+    <div id="modal-report" class="modal">
+        <div class="modal-content wide report-view-modal">
+            <h3>Vista Previa del Reporte</h3>
+            <div id="report-preview" class="report-container">
+                <!-- Se generará dinámicamente -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn secondary close-modal">Cerrar</button>
+                <button type="button" id="btn-copy-whatsapp" class="btn btn-whatsapp">📱 Copiar para WhatsApp</button>
+                <button type="button" id="btn-print-pdf" class="btn primary">🖨️ Imprimir PDF</button>
+            </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Modal: Configuración y Portabilidad -->
+    <div id="modal-config" class="modal">
+        <div class="modal-content">
+            <h3>Copia de Seguridad y Portabilidad</h3>
+            <p class="hint">Usa estas opciones para mover tu aplicación a otra carpeta o hacer una copia de tus
+                registros.</p>
+
+            <div class="config-actions">
+                <button id="btn-export-json" class="btn secondary">
+                    <span>📥</span> Exportar Datos (JSON)
+                </button>
+                <div class="import-zone">
+                    <p class="hint">Para restaurar o mover datos:</p>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button id="btn-import-trigger" class="btn primary">
+                        <span>📤</span> Importar Datos (Seleccionar Archivo)
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn secondary close-modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="db.js"></script>
     <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js');
+        }
+    </script>
 </body>
 
 </html>
