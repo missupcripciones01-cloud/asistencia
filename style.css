@@ -32,26 +32,10 @@ body {
     overflow: hidden;
 }
 
-@media (max-width: 768px) {
-    body {
-        overflow: auto;
-        height: auto;
-    }
-}
-
 .app-container {
     display: grid;
     grid-template-columns: 260px 1fr;
-    min-height: 100vh;
-}
-
-@media (max-width: 768px) {
-    .app-container {
-        grid-template-columns: 1fr;
-        /* Stack sidebar on top */
-        min-height: auto;
-        /* Allow content to dictate height */
-    }
+    height: 100vh;
 }
 
 /* Sidebar */
@@ -652,163 +636,94 @@ td {
     font-weight: 500;
 }
 
-/* --- Responsive (Mobile) --- */
+/* --- MOBILE OVERHAUL (Privacidad y Diseño) --- */
 @media screen and (max-width: 768px) {
+    body {
+        overflow-y: auto !important;
+        height: auto !important;
+    }
+
     .app-container {
-        flex-direction: column;
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: 100vh;
     }
 
     .sidebar {
-        width: 100%;
-        height: auto;
-        padding: 1rem;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(10px);
+        width: 100% !important;
+        height: auto !important;
+        padding: 1rem !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        position: relative !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
     }
 
     .sidebar-header h2 {
-        font-size: 1.25rem;
         text-align: center;
-        margin-bottom: 0.5rem;
+        margin-bottom: 1rem !important;
+        font-size: 1.25rem;
     }
 
     .side-nav {
-        flex-direction: row;
-        overflow-x: auto;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
         gap: 0.5rem;
-        padding: 0.5rem 0;
-        justify-content: space-around;
-        scrollbar-width: none;
-    }
-
-    .side-nav::-webkit-scrollbar {
-        display: none;
     }
 
     .nav-item {
-        padding: 0.6rem 0.8rem;
-        white-space: nowrap;
-        font-size: 0.85rem;
-        flex: 1;
+        padding: 0.7rem !important;
+        margin-bottom: 0 !important;
+        font-size: 0.8rem !important;
         justify-content: center;
     }
 
-    .nav-item .icon {
-        margin-right: 0.25rem;
-    }
-
-    .sidebar-info {
-        display: none;
-    }
-
     .main-content {
-        padding: 1.25rem 1rem;
+        padding: 1rem !important;
+        width: 100% !important;
+    }
+
+    .hero-banner {
+        height: 150px !important;
+        margin-bottom: 1.5rem !important;
     }
 
     .section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 1rem;
     }
 
     .summary-cards {
-        width: 100%;
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.5rem;
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.5rem !important;
     }
 
     .sum-card {
-        padding: 0.75rem 0.5rem;
-        min-width: 0;
+        padding: 0.75rem 0.25rem !important;
         align-items: center;
         text-align: center;
     }
 
-    .sum-card .label {
-        font-size: 0.6rem;
-    }
-
     .sum-card .value {
-        font-size: 1.25rem;
-    }
-
-    .entry-grid {
-        grid-template-columns: 1fr;
-        gap: 1.5rem;
-    }
-
-    .hero-banner {
-        height: 140px;
-        margin-bottom: 1.5rem;
-    }
-
-    .card {
-        padding: 1.25rem;
-    }
-
-    .modal-content {
-        width: 95%;
-        padding: 1.5rem;
-        border-radius: 20px;
-    }
-
-    .modal-content h3 {
-        font-size: 1.2rem;
-    }
-
-    .report-summary-box {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .report-container {
-        padding: 1.25rem;
-    }
-
-    .save-actions {
-        flex-direction: column;
-        width: 100%;
-    }
-
-    .save-actions .btn {
-        width: 100%;
-    }
-}
-
-/* --- Global Mobile Refinement --- */
-@media (max-width: 768px) {
-    .main-content {
-        padding: 1.25rem;
-    }
-
-    .hero-banner {
-        height: 160px;
-        margin-bottom: 1.5rem;
-        border-radius: 16px;
-    }
-
-    .summary-cards {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-
-    .sum-card {
-        padding: 1rem;
+        font-size: 1.25rem !important;
     }
 
     .entry-grid {
         grid-template-columns: 1fr !important;
+        gap: 1rem !important;
     }
 
-    .modal-content {
-        width: 95% !important;
-        padding: 1.5rem;
+    .card {
+        padding: 1.25rem !important;
     }
+}
+
+/* Fallback for Image Visibility */
+.hero-banner img {
+    background: #1e293b;
+    display: block;
 }

@@ -28,11 +28,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // --- Navegación ---
 function setupNavigation() {
-    document.querySelectorAll('.nav-item').forEach(btn => {
+    document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
         btn.onclick = async () => {
-            document.querySelectorAll('.nav-item, .tab-content').forEach(el => el.classList.remove('active'));
-            btn.classList.add('active');
             const tabId = btn.getAttribute('data-tab');
+            if (!tabId) return;
+
+            document.querySelectorAll('.nav-item[data-tab], .tab-content').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
             document.getElementById(tabId).classList.add('active');
 
             if (tabId === 'evolution-tab') {
