@@ -47,7 +47,8 @@ async function loadDateData(date) {
     const zoomEntries = await getZoomEntries(date);
 
     // Reset UI
-    document.getElementById('input-presencial').value = meeting ? meeting.presencial : 0;
+    const presencialInput = document.getElementById('private-attendance-total');
+    if (presencialInput) presencialInput.value = meeting ? meeting.presencial : 0;
     const body = document.getElementById('zoom-body');
     body.innerHTML = '';
 
@@ -66,8 +67,8 @@ async function loadDateData(date) {
 function setupZoomTableActions() {
     document.getElementById('btn-add-zoom').onclick = () => addZoomRow();
 
-    // Escuchar cambios en inputs para actualizar totales en tiempo real
-    document.getElementById('input-presencial').oninput = updateTotals;
+    const presencialInput = document.getElementById('private-attendance-total');
+    if (presencialInput) presencialInput.oninput = updateTotals;
 }
 
 function addZoomRow(name = '', connections = 1) {
@@ -75,16 +76,16 @@ function addZoomRow(name = '', connections = 1) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td class="row-name">
-            <input type="text" class="zoom-name" value="${name}" 
+            <input type="text" class="zoom-name nx-secure-input" value="${name}" 
                 placeholder="Nombre del asistente..." 
-                autocomplete="off" 
+                autocomplete="new-password" 
                 autocorrect="off" 
                 autocapitalize="off" 
                 spellcheck="false"
                 data-lpignore="true">
         </td>
         <td class="row-count">
-            <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="off">
+            <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="new-password">
         </td>
         <td>
             <button class="btn-delete" title="Eliminar">🗑️</button>
@@ -93,12 +94,12 @@ function addZoomRow(name = '', connections = 1) {
 
     tr.querySelector('.btn-delete').onclick = () => {
         tr.remove();
-        updateTotals();
+        nxCalculateTotals();
     };
 
-    const nameInput = tr.querySelector('.zoom-name');
+    const nameInput = tr.querySelector('.nx-secure-input');
     nameInput.oninput = (e) => {
-        updateTotals();
+        nxCalculateTotals();
         showSuggestions(e.target);
     };
 
@@ -106,7 +107,29 @@ function addZoomRow(name = '', connections = 1) {
     nameInput.onblur = () => setTimeout(hideSuggestions, 200);
 
     body.appendChild(tr);
-    updateTotals();
+    nxCalculateTotals();
+}
+
+// --- Cálculos y Totales (Privacidad Reforzada) ---
+function nxCalculateTotals() {
+    const presencialInput = document.getElementById('private-attendance-total');
+    const presencial = presencialInput ? (parseInt(presencialInput.value) || 0) : 0;
+    let zoomTotal = 0;
+
+    document.querySelectorAll('.zoom-count').forEach(input => {
+        zoomTotal += parseInt(input.value) || 0;
+    });
+
+    const total = presencial + zoomTotal;
+
+    document.getElementById('val-presencial').textContent = presencial;
+    document.getElementById('val-zoom').textContent = zoomTotal;
+    document.getElementById('val-total').textContent = total;
+
+    // Visual feedback
+    const totalValueEl = document.getElementById('val-total');
+    totalValueEl.style.transform = 'scale(1.1)';
+    setTimeout(() => totalValueEl.style.transform = 'scale(1)', 100);
 }
 
 // --- Sugerencias Personalizadas (Privacidad Total) ---
@@ -136,7 +159,7 @@ async function showSuggestions(input) {
         item.textContent = name;
         item.onclick = () => {
             input.value = name;
-            updateTotals();
+            nxCalculateTotals();
             hideSuggestions();
         };
         div.appendChild(item);
@@ -162,7 +185,8 @@ async function updateSuggestions() {
 function setupSaveAction() {
     document.getElementById('btn-save-all').onclick = async () => {
         const date = document.getElementById('meeting-date').value;
-        const presencial = parseInt(document.getElementById('input-presencial').value) || 0;
+        const presencialInput = document.getElementById('private-attendance-total');
+        const presencial = presencialInput ? (parseInt(presencialInput.value) || 0) : 0;
 
         const zoomEntries = [];
         document.querySelectorAll('#zoom-body tr').forEach(tr => {
@@ -179,8 +203,7 @@ function setupSaveAction() {
         await saveMeeting({ date, presencial, total });
         await saveZoomEntries(date, zoomEntries);
 
-        await updateSuggestions();
-        alert('Registro guardado correctamente en tu MacBook.');
+        alert('¡Registro guardado con éxito!');
     };
 }
 
