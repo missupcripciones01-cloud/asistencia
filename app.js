@@ -1,275 +1,505 @@
-let currentPersonId = null;
 let annualChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await initDB();
-    await refreshPersonList();
-    setupEventListeners();
+    setupNavigation();
+    setupDateSelector();
+    setupZoomTableActions();
+    setupSaveAction();
+    setupNamesModal();
+    setupConfigModal();
+    setupReportAction();
+    setupGlobalModalClosing();
+    await updateSuggestions();
+
+    // Inicializar con la fecha de hoy
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('meeting-date').value = today;
+    await loadDateData(today);
 });
 
-function setupEventListeners() {
-    // Modales
-    document.getElementById('btn-add-person').onclick = () => openModal('modal-person');
-    document.getElementById('btn-open-form').onclick = () => {
-        if (!currentPersonId) return alert('Seleccione una persona primero');
-        openModal('modal-entry');
-    };
+// --- Navegación ---
+function setupNavigation() {
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.onclick = async () => {
+            document.querySelectorAll('.nav-item, .tab-content').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
 
-    document.querySelectorAll('.close-modal').forEach(btn => {
-        btn.onclick = () => closeModal(btn.closest('.modal').id);
-    });
-
-    // Formularios
-    document.getElementById('form-person').onsubmit = async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('person-name').value;
-        const id = document.getElementById('edit-person-id').value;
-
-        if (id) await updatePerson(parseInt(id), name);
-        else await addPerson(name);
-
-        closeModal('modal-person');
-        refreshPersonList();
-    };
-
-    document.getElementById('form-entry').onsubmit = async (e) => {
-        e.preventDefault();
-        const entry = {
-            personId: currentPersonId,
-            date: document.getElementById('entry-date').value,
-            hours: parseFloat(document.getElementById('entry-hours').value),
-            courses: parseInt(document.getElementById('entry-courses').value)
+            if (tabId === 'evolution-tab') {
+                await renderEvolutionChart();
+            }
         };
-        const id = document.getElementById('edit-entry-id').value;
+    });
+}
 
-        if (id) {
-            entry.id = parseInt(id);
-            await updateEntry(entry);
-        } else {
-            await addEntry(entry);
-        }
+// --- Gestión de Fecha ---
+function setupDateSelector() {
+    const dateInput = document.getElementById('meeting-date');
+    dateInput.onchange = async () => {
+        await loadDateData(dateInput.value);
+    };
+}
 
-        closeModal('modal-entry');
-        loadPersonData(currentPersonId);
+async function loadDateData(date) {
+    const meeting = await getMeeting(date);
+    const zoomEntries = await getZoomEntries(date);
+
+    // Reset UI
+    const presencialInput = document.getElementById('private-attendance-total');
+    if (presencialInput) presencialInput.value = meeting ? meeting.presencial : 0;
+    const body = document.getElementById('zoom-body');
+    body.innerHTML = '';
+
+    if (zoomEntries && zoomEntries.length > 0) {
+        // Ordenar alfabéticamente por nombre
+        zoomEntries.sort((a, b) => a.name.localeCompare(b.name));
+        zoomEntries.forEach(entry => addZoomRow(entry.name, entry.connections));
+    } else {
+        addZoomRow(); // Una fila vacía por defecto
+    }
+
+    nxCalculateTotals();
+}
+
+// --- Gestión de Tabla Zoom ---
+function setupZoomTableActions() {
+    document.getElementById('btn-add-zoom').onclick = () => addZoomRow();
+
+    const presencialInput = document.getElementById('private-attendance-total');
+    if (presencialInput) presencialInput.oninput = nxCalculateTotals;
+}
+
+function addZoomRow(name = '', connections = 1) {
+    const body = document.getElementById('zoom-body');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="row-name">
+            <input type="text" class="zoom-name nx-secure-input" value="${name}" 
+                placeholder="Nombre del asistente..." 
+                autocomplete="new-password" 
+                autocorrect="off" 
+                autocapitalize="off" 
+                spellcheck="false"
+                data-lpignore="true">
+        </td>
+        <td class="row-count">
+            <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="new-password">
+        </td>
+        <td>
+            <button class="btn-delete" title="Eliminar">🗑️</button>
+        </td>
+    `;
+
+    tr.querySelector('.btn-delete').onclick = () => {
+        tr.remove();
+        nxCalculateTotals();
     };
 
-    // Búsqueda
-    document.getElementById('person-search').oninput = (e) => {
-        const term = e.target.value.toLowerCase();
-        document.querySelectorAll('.person-item').forEach(item => {
-            const name = item.textContent.toLowerCase();
-            item.style.display = name.includes(term) ? 'flex' : 'none';
+    const nameInput = tr.querySelector('.nx-secure-input');
+    nameInput.oninput = (e) => {
+        nxCalculateTotals();
+        showSuggestions(e.target);
+    };
+
+    nameInput.onfocus = (e) => showSuggestions(e.target);
+    nameInput.onblur = () => setTimeout(hideSuggestions, 200);
+
+    body.appendChild(tr);
+    nxCalculateTotals();
+}
+
+// --- Cálculos y Totales (Privacidad Reforzada) ---
+function nxCalculateTotals() {
+    const presencialInput = document.getElementById('private-attendance-total');
+    const presencial = presencialInput ? (parseInt(presencialInput.value) || 0) : 0;
+    let zoomTotal = 0;
+
+    document.querySelectorAll('.zoom-count').forEach(input => {
+        zoomTotal += parseInt(input.value) || 0;
+    });
+
+    const total = presencial + zoomTotal;
+
+    document.getElementById('val-presencial').textContent = presencial;
+    document.getElementById('val-zoom').textContent = zoomTotal;
+    document.getElementById('val-total').textContent = total;
+
+    // Visual feedback
+    const totalValueEl = document.getElementById('val-total');
+    totalValueEl.style.transform = 'scale(1.1)';
+    setTimeout(() => totalValueEl.style.transform = 'scale(1)', 100);
+}
+
+// --- Sugerencias Personalizadas (Privacidad Total) ---
+let masterNamesCache = [];
+
+async function showSuggestions(input) {
+    if (masterNamesCache.length === 0) {
+        const names = await getMasterNames();
+        masterNamesCache = names.map(n => n.name).sort();
+    }
+
+    const val = input.value.toLowerCase();
+    const suggestions = masterNamesCache.filter(name =>
+        name.toLowerCase().includes(val)
+    );
+
+    const div = document.getElementById('custom-suggestions');
+    if (suggestions.length === 0) {
+        div.style.display = 'none';
+        return;
+    }
+
+    div.innerHTML = '';
+    suggestions.slice(0, 10).forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.textContent = name;
+        item.onclick = () => {
+            input.value = name;
+            nxCalculateTotals();
+            hideSuggestions();
+        };
+        div.appendChild(item);
+    });
+
+    const rect = input.getBoundingClientRect();
+    div.style.left = `${rect.left}px`;
+    div.style.top = `${rect.bottom + window.scrollY}px`;
+    div.style.width = `${rect.width}px`;
+    div.style.display = 'block';
+}
+
+function hideSuggestions() {
+    document.getElementById('custom-suggestions').style.display = 'none';
+}
+
+async function updateSuggestions() {
+    const names = await getMasterNames();
+    masterNamesCache = names.map(n => n.name).sort();
+}
+
+// --- Guardado ---
+function setupSaveAction() {
+    document.getElementById('btn-save-all').onclick = async () => {
+        const date = document.getElementById('meeting-date').value;
+        const presencialInput = document.getElementById('private-attendance-total');
+        const presencial = presencialInput ? (parseInt(presencialInput.value) || 0) : 0;
+
+        const zoomEntries = [];
+        document.querySelectorAll('#zoom-body tr').forEach(tr => {
+            const name = tr.querySelector('.zoom-name').value.trim();
+            const connections = parseInt(tr.querySelector('.zoom-count').value) || 0;
+            if (name !== "" || connections > 0) {
+                zoomEntries.push({ date, name, connections });
+            }
         });
-    };
 
-    // Filtro mes
-    document.getElementById('filter-month').onchange = () => loadPersonData(currentPersonId);
+        const zoomTotal = zoomEntries.reduce((sum, e) => sum + e.connections, 0);
+        const total = presencial + zoomTotal;
 
-    // Reporte básico (Imprimir)
-    document.getElementById('btn-show-report').onclick = () => {
-        if (!currentPersonId) return;
-        window.print();
-    };
+        await saveMeeting({ date, presencial, total });
+        await saveZoomEntries(date, zoomEntries);
 
-    // Reporte Mensajería (Copiar al portapapeles)
-    document.getElementById('btn-msg-report').onclick = async () => {
-        if (!currentPersonId) return alert('Seleccione una persona primero');
-
-        const personName = document.getElementById('selected-person-name').textContent;
-        const filterMonth = document.getElementById('filter-month').value; // YYYY-MM
-        const [year, month] = filterMonth.split('-');
-
-        // Nombres de los meses en español
-        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-        const monthText = monthNames[parseInt(month) - 1];
-
-        const entries = await getEntriesByPerson(currentPersonId);
-        const monthlyEntries = entries.filter(e => e.date.startsWith(filterMonth));
-
-        const totalHours = monthlyEntries.reduce((sum, e) => sum + e.hours, 0);
-        const totalCourses = monthlyEntries.reduce((sum, e) => sum + e.courses, 0);
-
-        const reportText = `Informe
-${monthNames[parseInt(month) - 1]} ${year}
-Nombre: ${personName}
-Horas: ${totalHours.toFixed(1)}
-Cursos: ${totalCourses}
-Saludos`;
-
-        const success = await copyToClipboard(reportText);
-        if (success) {
-            alert('¡Reporte copiado al portapapeles!\n\n' + reportText);
-        } else {
-            // Fallback: Si no puede copiar, mostramos un prompt para que el usuario solo tenga que dar a Cmd+C
-            window.prompt("Tu navegador bloquea el copiado automático en archivos locales.\nPresiona Cmd+C para copiar este reporte:", reportText);
-        }
+        alert('¡Registro guardado con éxito!');
     };
 }
 
-async function copyToClipboard(text) {
-    // 1. Intentar con API moderna (solo en HTTPS o Localhost)
-    if (navigator.clipboard) {
+// --- Gestión de Modal de Nombres ---
+function setupNamesModal() {
+    const modal = document.getElementById('modal-names');
+    const btnOpen = document.getElementById('btn-open-names-modal');
+    const btnSave = document.getElementById('btn-save-names');
+    const textArea = document.getElementById('import-names-area');
+
+    btnOpen.onclick = () => {
+        textArea.value = "";
+        modal.style.display = 'flex';
+    };
+
+    btnSave.onclick = async () => {
+        const text = textArea.value;
+        const names = text.split('\n')
+            .map(n => n.trim())
+            .filter(n => n !== "");
+
+        if (names.length === 0) return alert("Por favor, pegue algunos nombres primero.");
+
         try {
-            await navigator.clipboard.writeText(text);
-            return true;
+            await saveMasterNames(names);
+            await updateSuggestions();
+            modal.style.display = 'none';
+            alert(`¡Se han importado ${names.length} nombres correctamente!`);
         } catch (err) {
-            // Continuar al fallback si falla la API
+            console.error(err);
+            alert("Error al guardar los nombres.");
         }
-    }
+    };
+}
 
-    // 2. Fallback clásico de Textarea
+// La función updateSuggestions ahora se gestiona en la sección de Sugerencias Personalizadas
+
+// --- Gestión de Reportes ---
+function setupReportAction() {
+    const modal = document.getElementById('modal-report');
+    const btnOpen = document.getElementById('btn-open-report');
+    const btnPrint = document.getElementById('btn-print-pdf');
+    const btnWhatsApp = document.getElementById('btn-copy-whatsapp');
+
+    btnOpen.onclick = () => {
+        generateReportPreview();
+        modal.style.display = 'flex';
+    };
+
+    btnPrint.onclick = () => window.print();
+
+    btnWhatsApp.onclick = () => {
+        const text = generateWhatsAppText();
+        copyToClipboard(text);
+    };
+}
+
+function getFormattedDateLong(dateStr) {
+    const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    const date = new Date(dateStr + "T12:00:00"); // Evitar problemas de zona horaria
+    let formatted = new Intl.DateTimeFormat('es-ES', options).format(date);
+    // Capitalizar primera letra y mes (según pedido del usuario del estilo)
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function generateReportPreview() {
+    const dateStr = document.getElementById('meeting-date').value;
+    const dateLong = getFormattedDateLong(dateStr);
+    const presencial = document.getElementById('val-presencial').textContent;
+    const zoom = document.getElementById('val-zoom').textContent;
+
+    // Obtener y ordenar asistentes actuales
+    const entries = [];
+    document.querySelectorAll('#zoom-body tr').forEach(tr => {
+        const name = tr.querySelector('.zoom-name').value.trim();
+        const connections = parseInt(tr.querySelector('.zoom-count').value) || 0;
+        if (name) entries.push({ name, connections });
+    });
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    let tableRows = entries.map(e => `
+        <tr>
+            <td>${e.name}</td>
+            <td style="text-align: right; font-weight: bold;">${e.connections}</td>
+        </tr>
+    `).join('');
+
+    const html = `
+        <div class="report-header">
+            <h1>Reporte de Asistencia</h1>
+            <p>${dateLong}</p>
+        </div>
+        <div class="report-summary-box">
+            <div class="summary-item">
+                <span class="label">Presencial</span>
+                <span class="value">${presencial}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Por Zoom</span>
+                <span class="value">${zoom}</span>
+            </div>
+            <div class="summary-item" style="border-top-color: #10b981;">
+                <span class="label">Total</span>
+                <span class="value">${parseInt(presencial) + parseInt(zoom)}</span>
+            </div>
+        </div>
+        <h3>Detalle de Conexiones Zoom</h3>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Nombre del Asistente</th>
+                    <th style="text-align: right;">Cantidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows || '<tr><td colspan="2" style="text-align:center; color:#94a3b8;">Sin registros de Zoom</td></tr>'}
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById('report-preview').innerHTML = html;
+}
+
+function generateWhatsAppText() {
+    const dateStr = document.getElementById('meeting-date').value;
+    const dateLong = getFormattedDateLong(dateStr);
+    const presencial = document.getElementById('val-presencial').textContent;
+    const zoom = document.getElementById('val-zoom').textContent;
+    const total = parseInt(presencial) + parseInt(zoom);
+
+    const entries = [];
+    document.querySelectorAll('#zoom-body tr').forEach(tr => {
+        const name = tr.querySelector('.zoom-name').value.trim();
+        const connections = parseInt(tr.querySelector('.zoom-count').value) || 0;
+        if (name) entries.push({ name, connections });
+    });
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+
+    let text = `*RESUMEN DE ASISTENCIA*\n`;
+    text += `📅 ${dateLong}\n\n`;
+    text += `👥 *Asistencia Presencial:* ${presencial}\n`;
+    text += `💻 *Asistencia por Zoom:* ${zoom}\n`;
+    text += `✅ *TOTAL:* ${total}\n\n`;
+    text += `*DETALLE ZOOM:*\n`;
+
+    entries.forEach(e => {
+        text += `• ${e.name}: ${e.connections}\n`;
+    });
+
+    return text;
+}
+
+function copyToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
     try {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        textArea.style.top = "0";
-        textArea.style.opacity = "0"; // Asegurar que no se vea
-        document.body.appendChild(textArea);
-        textArea.select();
-        textArea.setSelectionRange(0, 99999); // Para móviles y navegadores antiguos
-
-        const successful = document.execCommand('copy');
-        document.body.removeChild(textArea);
-        return successful;
+        document.execCommand('copy');
+        alert("¡Reporte copiado al portapapeles para WhatsApp!");
     } catch (err) {
-        return false;
+        prompt("Copia el reporte manualmente:", text);
     }
+    document.body.removeChild(textArea);
 }
 
-async function refreshPersonList() {
-    const persons = await getAllPersons();
-    const list = document.getElementById('person-list');
-    list.innerHTML = '';
+// --- Gráficos de Evolución ---
+async function renderEvolutionChart() {
+    const allMeetings = await getAllMeetings();
+    // Ordenar por fecha
+    allMeetings.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    persons.forEach(p => {
-        const div = document.createElement('div');
-        div.className = `person-item ${p.id === currentPersonId ? 'active' : ''}`;
-        div.innerHTML = `<span>${p.name}</span>`;
-        div.onclick = () => selectPerson(p.id, p.name);
-        list.appendChild(div);
+    const labels = allMeetings.map(m => {
+        const d = new Date(m.date);
+        return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
     });
-}
+    const dataTotal = allMeetings.map(m => m.total);
+    const dataZoom = allMeetings.map(m => m.total - m.presencial);
 
-function selectPerson(id, name) {
-    currentPersonId = id;
-    document.getElementById('selected-person-name').textContent = name;
-    document.querySelectorAll('.person-item').forEach(item => {
-        item.classList.toggle('active', item.textContent === name);
-    });
-
-    // Reset month filter to current month
-    const now = new Date();
-    document.getElementById('filter-month').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-    loadPersonData(id);
-}
-
-async function loadPersonData(personId) {
-    const entries = await getEntriesByPerson(personId);
-    const filterMonth = document.getElementById('filter-month').value; // YYYY-MM
-
-    // Filtrar por mes para estadísticas
-    const monthlyEntries = entries.filter(e => e.date.startsWith(filterMonth));
-    const annualEntries = entries.filter(e => e.date.startsWith(filterMonth.split('-')[0]));
-
-    renderDashboard(monthlyEntries, annualEntries);
-    renderTable(entries);
-}
-
-function renderDashboard(monthly, annual) {
-    // Mensual 55h
-    const totalHoursMonth = monthly.reduce((sum, e) => sum + e.hours, 0);
-    const totalCoursesMonth = monthly.reduce((sum, e) => sum + e.courses, 0);
-
-    const monthlyPercent = Math.min((totalHoursMonth / 55) * 100, 100);
-    const bar = document.getElementById('monthly-progress-bar');
-    bar.style.width = `${monthlyPercent}%`;
-
-    // Lógica de color: naranja -> verde
-    if (totalHoursMonth >= 55) bar.style.backgroundColor = 'var(--green-goal)';
-    else bar.style.backgroundColor = 'var(--orange-goal)';
-
-    document.getElementById('monthly-current').textContent = `${totalHoursMonth.toFixed(1)}h`;
-    document.getElementById('monthly-courses').textContent = totalCoursesMonth;
-
-    // Anual 600h
-    const totalHoursYear = annual.reduce((sum, e) => sum + e.hours, 0);
-    renderAnnualChart(totalHoursYear);
-}
-
-function renderAnnualChart(total) {
-    const ctx = document.getElementById('annual-chart').getContext('2d');
-    const remaining = Math.max(0, 600 - total);
-    const extra = Math.max(0, total - 600);
+    const ctx = document.getElementById('annual-evolution-chart').getContext('2d');
 
     if (annualChart) annualChart.destroy();
 
     annualChart = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'line',
         data: {
-            labels: ['Completado', 'Restante', 'Extra'],
-            datasets: [{
-                data: [Math.min(total, 600), remaining, extra],
-                backgroundColor: ['#22c55e', '#f97316', '#3b82f6'],
-                borderWidth: 0
-            }]
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Asistencia Total',
+                    data: dataTotal,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#3b82f6'
+                },
+                {
+                    label: 'Solo Zoom',
+                    data: dataZoom,
+                    borderColor: '#10b981',
+                    borderDash: [5, 5],
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
         },
         options: {
-            cutout: '70%',
-            plugins: { legend: { display: false } },
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#94a3b8', font: { weight: 'bold' } } }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8' }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8' }
+                }
+            }
         }
     });
 
-    document.getElementById('annual-status').innerHTML = `
-        Progreso: <strong>${total.toFixed(1)}h</strong> / 600h 
-        ${extra > 0 ? `<br><span style="color:#3b82f6">¡Extra: +${extra.toFixed(1)}h!</span>` : ''}
-    `;
-}
-
-function renderTable(entries) {
-    const tbody = document.getElementById('records-body');
-    tbody.innerHTML = '';
-
-    entries.forEach(e => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${new Date(e.date).toLocaleDateString()}</td>
-            <td>${e.hours}h</td>
-            <td>${e.courses}</td>
-            <td>
-                <button class="btn secondary" onclick="editEntryUI(${e.id}, '${e.date}', ${e.hours}, ${e.courses})">Editar</button>
-                <button class="btn" style="color:red" onclick="deleteEntryUI(${e.id})">Borrar</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// UI Helpers
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) {
-    document.getElementById(id).style.display = 'none';
-    document.getElementById('form-person').reset();
-    document.getElementById('form-entry').reset();
-    document.getElementById('edit-person-id').value = '';
-    document.getElementById('edit-entry-id').value = '';
-}
-
-window.editEntryUI = (id, date, hours, courses) => {
-    document.getElementById('edit-entry-id').value = id;
-    document.getElementById('entry-date').value = date;
-    document.getElementById('entry-hours').value = hours;
-    document.getElementById('entry-courses').value = courses;
-    openModal('modal-entry');
-};
-
-window.deleteEntryUI = async (id) => {
-    if (confirm('¿Seguro que desea borrar este registro?')) {
-        await deleteEntry(id);
-        loadPersonData(currentPersonId);
+    // Estadísticas
+    if (dataTotal.length > 0) {
+        const max = Math.max(...dataTotal);
+        const avg = dataTotal.reduce((a, b) => a + b, 0) / dataTotal.length;
+        document.getElementById('stat-max').textContent = max;
+        document.getElementById('stat-avg').textContent = avg.toFixed(1);
     }
-};
+}
+
+// --- Configuración y Portabilidad ---
+function setupConfigModal() {
+    const modal = document.getElementById('modal-config');
+    const btnOpen = document.getElementById('btn-open-config-modal');
+    const btnExport = document.getElementById('btn-export-json');
+    const btnImportTrigger = document.getElementById('btn-import-trigger');
+    const importFile = document.getElementById('import-file');
+
+    btnOpen.onclick = () => modal.style.display = 'flex';
+
+    btnExport.onclick = async () => {
+        const data = await exportData();
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `AttendanceMaster_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    btnImportTrigger.onclick = () => importFile.click();
+
+    importFile.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const json = event.target.result;
+                await importData(json);
+                alert('¡Datos importados con éxito! La página se recargará para mostrar los cambios.');
+                location.reload();
+            } catch (err) {
+                console.error(err);
+                alert('Error al importar el archivo. Asegúrate de que es un archivo JSON válido de AttendanceMaster.');
+            }
+        };
+        reader.readAsText(file);
+    };
+}
+
+// --- Utilidades Globales ---
+function setupGlobalModalClosing() {
+    // Cerrar al pulsar el botón de cerrar
+    document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+        };
+    });
+
+    // Cerrar al pulsar fuera del contenido (en el fondo oscuro)
+    window.onclick = (event) => {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    };
+}
