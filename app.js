@@ -1,21 +1,29 @@
 let annualChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await initDB();
+    // 1. Inicializar UI inmediatamente para que los botones respondan
     setupNavigation();
-    setupDateSelector();
-    setupZoomTableActions();
-    setupSaveAction();
     setupNamesModal();
     setupConfigModal();
-    setupReportAction();
     setupGlobalModalClosing();
-    await updateSuggestions();
+    setupReportAction();
+    setupZoomTableActions();
+    setupSaveAction();
+    setupDateSelector();
 
-    // Inicializar con la fecha de hoy
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('meeting-date').value = today;
-    await loadDateData(today);
+    // 2. Inicializar DB y Datos de forma asíncrona
+    try {
+        await initDB();
+        await updateSuggestions();
+
+        // Inicializar con la fecha de hoy
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('meeting-date').value = today;
+        await loadDateData(today);
+    } catch (err) {
+        console.error("Fallo en la inicialización:", err);
+        document.getElementById('db-status').textContent = "Error de Sistema";
+    }
 });
 
 // --- Navegación ---

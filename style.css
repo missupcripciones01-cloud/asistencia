@@ -27,13 +27,31 @@ body {
     font-family: 'Inter', sans-serif;
     color: var(--text-white);
     background: radial-gradient(circle at top right, #1e293b, var(--bg-main));
-    min-height: 100vh;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow: auto;
+        height: auto;
+    }
 }
 
 .app-container {
     display: grid;
     grid-template-columns: 260px 1fr;
     min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        grid-template-columns: 1fr;
+        /* Stack sidebar on top */
+        min-height: auto;
+        /* Allow content to dictate height */
+    }
 }
 
 /* Sidebar */
@@ -47,6 +65,17 @@ body {
     z-index: 10;
 }
 
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 1.5rem 1rem;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+}
+
 .sidebar-header h2 {
     font-size: 1.5rem;
     font-weight: 800;
@@ -55,12 +84,27 @@ body {
     margin-bottom: 3rem;
 }
 
+@media (max-width: 768px) {
+    .sidebar-header h2 {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+}
+
 .sidebar-header h2 span {
     color: var(--accent);
 }
 
 .side-nav {
     flex-grow: 1;
+}
+
+@media (max-width: 768px) {
+    .side-nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
 }
 
 .nav-item {
@@ -79,6 +123,14 @@ body {
     align-items: center;
     gap: 0.75rem;
     margin-bottom: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .nav-item {
+        margin-bottom: 0;
+        padding: 0.75rem;
+        font-size: 0.85rem;
+    }
 }
 
 .nav-item:hover {
@@ -727,5 +779,36 @@ td {
 
     .save-actions .btn {
         width: 100%;
+    }
+}
+
+/* --- Global Mobile Refinement --- */
+@media (max-width: 768px) {
+    .main-content {
+        padding: 1.25rem;
+    }
+
+    .hero-banner {
+        height: 160px;
+        margin-bottom: 1.5rem;
+        border-radius: 16px;
+    }
+
+    .summary-cards {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .sum-card {
+        padding: 1rem;
+    }
+
+    .entry-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .modal-content {
+        width: 95% !important;
+        padding: 1.5rem;
     }
 }
