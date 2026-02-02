@@ -75,10 +75,11 @@ function addZoomRow(name = '', connections = 1) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td class="row-name">
-            <input type="text" list="suggested-names" class="zoom-name" value="${name}" placeholder="Nombre del asistente...">
+            <input type="text" list="suggested-names" class="zoom-name" value="${name}" 
+                placeholder="Nombre del asistente..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         </td>
         <td class="row-count">
-            <input type="number" class="zoom-count" min="1" value="${connections}">
+            <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="off">
         </td>
         <td>
             <button class="btn-delete" title="Eliminar">🗑️</button>
@@ -165,16 +166,15 @@ function setupNamesModal() {
 
         if (names.length === 0) return alert("Por favor, pegue algunos nombres primero.");
 
-        const transaction = db.transaction(['master_names'], 'readwrite');
-        const store = transaction.objectStore('master_names');
-
-        for (const name of names) {
-            store.put({ name });
+        try {
+            await saveMasterNames(names);
+            await updateSuggestions();
+            modal.style.display = 'none';
+            alert(`¡Se han importado ${names.length} nombres correctamente!`);
+        } catch (err) {
+            console.error(err);
+            alert("Error al guardar los nombres.");
         }
-
-        await updateSuggestions();
-        modal.style.display = 'none';
-        alert(`¡Se han importado ${names.length} nombres correctamente!`);
     };
 }
 
