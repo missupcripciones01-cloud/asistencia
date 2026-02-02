@@ -75,8 +75,13 @@ function addZoomRow(name = '', connections = 1) {
     const tr = document.createElement('tr');
     tr.innerHTML = `
         <td class="row-name">
-            <input type="text" list="suggested-names" class="zoom-name" value="${name}" 
-                placeholder="Nombre del asistente..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <input type="text" class="zoom-name" value="${name}" 
+                placeholder="Nombre del asistente..." 
+                autocomplete="off" 
+                autocorrect="off" 
+                autocapitalize="off" 
+                spellcheck="false"
+                data-lpignore="true">
         </td>
         <td class="row-count">
             <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="off">
@@ -91,33 +96,66 @@ function addZoomRow(name = '', connections = 1) {
         updateTotals();
     };
 
-    tr.querySelectorAll('input').forEach(input => {
-        input.oninput = updateTotals;
-    });
+    const nameInput = tr.querySelector('.zoom-name');
+    nameInput.oninput = (e) => {
+        updateTotals();
+        showSuggestions(e.target);
+    };
+
+    nameInput.onfocus = (e) => showSuggestions(e.target);
+    nameInput.onblur = () => setTimeout(hideSuggestions, 200);
 
     body.appendChild(tr);
     updateTotals();
 }
 
-// --- Cálculos y Totales ---
-function updateTotals() {
-    const presencial = parseInt(document.getElementById('input-presencial').value) || 0;
-    let zoomTotal = 0;
+// --- Sugerencias Personalizadas (Privacidad Total) ---
+let masterNamesCache = [];
 
-    document.querySelectorAll('.zoom-count').forEach(input => {
-        zoomTotal += parseInt(input.value) || 0;
+async function showSuggestions(input) {
+    if (masterNamesCache.length === 0) {
+        const names = await getMasterNames();
+        masterNamesCache = names.map(n => n.name).sort();
+    }
+
+    const val = input.value.toLowerCase();
+    const suggestions = masterNamesCache.filter(name =>
+        name.toLowerCase().includes(val)
+    );
+
+    const div = document.getElementById('custom-suggestions');
+    if (suggestions.length === 0) {
+        div.style.display = 'none';
+        return;
+    }
+
+    div.innerHTML = '';
+    suggestions.slice(0, 10).forEach(name => {
+        const item = document.createElement('div');
+        item.className = 'suggestion-item';
+        item.textContent = name;
+        item.onclick = () => {
+            input.value = name;
+            updateTotals();
+            hideSuggestions();
+        };
+        div.appendChild(item);
     });
 
-    const total = presencial + zoomTotal;
+    const rect = input.getBoundingClientRect();
+    div.style.left = `${rect.left}px`;
+    div.style.top = `${rect.bottom + window.scrollY}px`;
+    div.style.width = `${rect.width}px`;
+    div.style.display = 'block';
+}
 
-    document.getElementById('val-presencial').textContent = presencial;
-    document.getElementById('val-zoom').textContent = zoomTotal;
-    document.getElementById('val-total').textContent = total;
+function hideSuggestions() {
+    document.getElementById('custom-suggestions').style.display = 'none';
+}
 
-    // Visual feedback para el total
-    const totalValueEl = document.getElementById('val-total');
-    totalValueEl.style.transform = 'scale(1.1)';
-    setTimeout(() => totalValueEl.style.transform = 'scale(1)', 100);
+async function updateSuggestions() {
+    const names = await getMasterNames();
+    masterNamesCache = names.map(n => n.name).sort();
 }
 
 // --- Guardado ---
@@ -178,19 +216,7 @@ function setupNamesModal() {
     };
 }
 
-async function updateSuggestions() {
-    const names = await getMasterNames();
-    // Ordenar alfabéticamente
-    names.sort((a, b) => a.name.localeCompare(b.name));
-
-    const datalist = document.getElementById('suggested-names');
-    datalist.innerHTML = '';
-    names.forEach(n => {
-        const option = document.createElement('option');
-        option.value = n.name;
-        datalist.appendChild(option);
-    });
-}
+// La función updateSuggestions ahora se gestiona en la sección de Sugerencias Personalizadas
 
 // --- Gestión de Reportes ---
 function setupReportAction() {
