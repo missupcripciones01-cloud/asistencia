@@ -3,219 +3,222 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AttendanceMaster | Gestión de Asistencia Profesional</title>
-    <link rel="stylesheet" href="style.css">
+    <title>AttendanceMaster | Gestión Profesional</title>
+
+    <!-- Responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
+
+    <!-- iOS PWA -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AttendanceMaster">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Attendance<span>Master</span></h2>
-            </div>
-            <nav class="side-nav">
-                <button class="nav-item active" data-tab="register-tab">
-                    <span class="icon">📅</span> Registro Diario
-                </button>
-                <button class="nav-item" data-tab="evolution-tab">
-                    <span class="icon">📈</span> Evolución Anual
-                </button>
-                <button class="nav-item" id="btn-open-names-modal">
-                    <span class="icon">👥</span> Gestión de Nombres
-                </button>
-                <button class="nav-item" id="btn-open-config-modal">
-                    <span class="icon">⚙️</span> Copia y Portabilidad
-                </button>
+
+    <!-- ===================== -->
+    <!-- HEADER / NAVEGACIÓN -->
+    <!-- ===================== -->
+    <header class="app-header">
+        <div class="header-container">
+            <h1>Attendance<span>Master</span></h1>
+            <nav class="nav-bar">
+                <button class="nav-item active" data-tab="attendance-tab">Asistencia</button>
+                <button class="nav-item" data-tab="evolution-tab">Evolución</button>
+                <button class="nav-item" data-tab="config-tab">Configuración</button>
             </nav>
-            <div class="sidebar-info">
-                <p>Almacenamiento Local Activo</p>
-                <small id="db-status">Preparado</small>
+        </div>
+    </header>
+
+    <!-- ===================== -->
+    <!-- CONTENIDO PRINCIPAL -->
+    <!-- ===================== -->
+    <main class="app-main">
+
+        <!-- TAB ASISTENCIA -->
+        <section id="attendance-tab" class="tab-content active">
+
+            <div class="registration-header card">
+                <!-- Fecha -->
+                <div class="field-group">
+                    <label for="meeting-date">Fecha de la reunión</label>
+                    <input type="date" id="meeting-date">
+                </div>
+
+                <!-- Presencial -->
+                <div class="field-group">
+                    <label for="private-attendance-total">Asistencia presencial</label>
+                    <input type="number" id="private-attendance-total" min="0" autocomplete="new-password"
+                        autocorrect="off" autocapitalize="off" spellcheck="false">
+                </div>
             </div>
-        </aside>
 
-        <!-- Main Content Area -->
-        <main class="main-content">
-            <!-- Tabs Content -->
-
-            <!-- Tab 1: Registro Diario -->
-            <section id="register-tab" class="tab-content active">
-                <div class="hero-banner">
-                    <img src="hybrid_attendance_panoramic_hero.png" alt="AttendanceMaster Hero">
-                </div>
-                <header class="section-header">
-                    <div class="date-selector">
-                        <label for="meeting-date">Fecha de la Reunión:</label>
-                        <input type="date" id="meeting-date">
-                    </div>
-                    <div class="summary-cards">
-                        <div class="sum-card">
-                            <span class="label">Presencial</span>
-                            <span class="value" id="val-presencial">0</span>
-                        </div>
-                        <div class="sum-card">
-                            <span class="label">Zoom</span>
-                            <span class="value" id="val-zoom">0</span>
-                        </div>
-                        <div class="sum-card total">
-                            <span class="label">Total</span>
-                            <span class="value" id="val-total">0</span>
-                        </div>
-                    </div>
-                </header>
-
-                <div class="entry-grid">
-                    <!-- Presencial Column -->
-                    <div class="entry-column card">
-                        <h3>Asistencia Presencial</h3>
-                        <div class="form-group">
-                            <label>Hermanos/Hermanas/Peques (Total Presencial)</label>
-                            <input type="number" id="private-attendance-total" min="0" value="0" placeholder="Ej: 45"
-                                autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false">
-                        </div>
-                        <p class="hint">Anote aquí la suma total de personas presentes en la sala.</p>
-                    </div>
-
-                    <!-- Zoom Column -->
-                    <div class="entry-column card wide">
-                        <div class="card-header">
-                            <h3>Asistencia por Zoom</h3>
-                            <button id="btn-add-zoom" class="btn small">+ Añadir Conexión</button>
-                        </div>
-                        <div class="zoom-table-container">
-                            <table id="zoom-table">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre (Asistente)</th>
-                                        <th width="100">Cnx.</th>
-                                        <th width="50">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="zoom-body">
-                                    <!-- Filas dinámicas aquí -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+            <!-- Zoom -->
+            <div class="zoom-section card">
+                <div class="section-title">
+                    <h2>Asistencia por Zoom</h2>
+                    <button id="btn-add-zoom" class="btn-secondary">+ Añadir conexión</button>
                 </div>
 
-                <div class="save-actions" style="gap: 1rem;">
-                    <button id="btn-save-all" class="btn primary">Guardar Registro del Día</button>
-                    <button id="btn-open-report" class="btn secondary">📄 Generar Reporte</button>
+                <div class="table-wrapper">
+                    <table class="zoom-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Asistente</th>
+                                <th width="100">Cantidad</th>
+                                <th width="50"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="zoom-body"></tbody>
+                    </table>
                 </div>
-            </section>
+            </div>
 
-            <!-- Tab 2: Evolución Anual -->
-            <section id="evolution-tab" class="tab-content">
-                <header class="section-header">
-                    <h1>Evolución Anual Asistencia</h1>
-                    <div class="year-selector">
-                        <select id="select-year"></select>
-                    </div>
-                </header>
-
-                <div class="charts-container">
-                    <div class="chart-card">
-                        <h3>Tendencia de Asistencia</h3>
-                        <div class="canvas-wrapper">
-                            <canvas id="annual-evolution-chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="stats-footer">
-                        <div class="footer-stat">
-                            <span class="label">Máximo Asistentes</span>
-                            <span class="value" id="stat-max">0</span>
-                        </div>
-                        <div class="footer-stat">
-                            <span class="label">Promedio Mensual</span>
-                            <span class="value" id="stat-avg">0</span>
-                        </div>
-                    </div>
+            <!-- Totales y Acción -->
+            <div class="footer-actions">
+                <div class="totals-box card">
+                    <div class="total-item">Presencial: <strong id="val-presencial">0</strong></div>
+                    <div class="total-item">Zoom: <strong id="val-zoom">0</strong></div>
+                    <div class="total-item total-final">Total: <strong id="val-total">0</strong></div>
                 </div>
-            </section>
-        </main>
-    </div>
 
-    <!-- Modals or Datalist for suggestions -->
-    <!-- Contenedor para sugerencias (Privacidad Total) -->
-    <div id="custom-suggestions" class="custom-suggestions"></div>
+                <button id="btn-save-all" class="btn-primary">💾 Guardar Registro Diario</button>
+            </div>
 
-    <!-- Modal: Gestión de Nombres -->
+        </section>
+
+        <!-- TAB EVOLUCIÓN -->
+        <section id="evolution-tab" class="tab-content">
+            <div class="chart-section card">
+                <h2>Tendencia de Asistencia</h2>
+                <div class="chart-container">
+                    <canvas id="annual-evolution-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="stats-box">
+                <div class="stat-card card">
+                    <span class="label">Máximo Asistentes</span>
+                    <strong id="stat-max">0</strong>
+                </div>
+                <div class="stat-card card">
+                    <span class="label">Promedio Mensual</span>
+                    <strong id="stat-avg">0</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB CONFIGURACIÓN -->
+        <section id="config-tab" class="tab-content">
+            <div class="config-grid">
+                <div class="config-card card">
+                    <h3>👥 Base de Datos</h3>
+                    <p>Gestiona la lista maestra de nombres para sugerencias automáticas.</p>
+                    <button id="btn-open-names-modal" class="btn-secondary">👤 Gestionar Nombres</button>
+                </div>
+
+                <div class="config-card card">
+                    <h3>📄 Reportes y WhatsApp</h3>
+                    <p>Genera el resumen profesional para imprimir o compartir.</p>
+                    <button id="btn-open-report" class="btn-secondary">📄 Generar Reporte</button>
+                </div>
+
+                <div class="config-card card">
+                    <h3>⚙️ Portabilidad</h3>
+                    <p>Exporta o importa tus datos para usarlos en otros dispositivos.</p>
+                    <button id="btn-open-config-modal" class="btn-secondary">⚙️ Copia y Portabilidad</button>
+                </div>
+            </div>
+
+            <div class="db-info">
+                <small id="db-status">Almacenamiento Local Activo - Preparado</small>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===================== -->
+    <!-- SUGERENCIAS -->
+    <!-- ===================== -->
+    <div id="custom-suggestions" class="suggestions-box"></div>
+
+    <!-- ===================== -->
+    <!-- MODALES -->
+    <!-- ===================== -->
+
+    <!-- Modal Nombres -->
     <div id="modal-names" class="modal">
         <div class="modal-content wide">
-            <h3>Gestión Maestra de Nombres</h3>
-            <p class="hint">Pegue aquí la lista de nombres (uno por línea) para que aparezcan como sugerencias.</p>
-            <div class="form-group">
-                <textarea id="import-names-area" placeholder="Ej:&#10;Juan Perez&#10;Maria Garcia&#10;Pedro Lopez"
-                    rows="10"></textarea>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn secondary close-modal">Cerrar</button>
-                <button type="button" id="btn-save-names" class="btn primary">Guardar Nombres</button>
+            <button class="close-modal">✖</button>
+            <h2>Gestión Maestra de Nombres</h2>
+            <p class="hint">Pega aquí los nombres (uno por línea).</p>
+            <textarea id="import-names-area" rows="10" placeholder="Ej:&#10;Juan Perez&#10;Maria Garcia"></textarea>
+            <div class="modal-actions">
+                <button id="btn-clear-names" class="btn-danger">🗑️ Borrar Todo</button>
+                <button id="btn-save-names" class="btn-primary">Guardar Nombres</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Reporte Profesional -->
+    <!-- Modal Reporte -->
     <div id="modal-report" class="modal">
-        <div class="modal-content wide report-view-modal">
-            <h3>Vista Previa del Reporte</h3>
-            <div id="report-preview" class="report-container">
-                <!-- Se generará dinámicamente -->
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn secondary close-modal">Cerrar</button>
-                <button type="button" id="btn-copy-whatsapp" class="btn btn-whatsapp">📱 Copiar para WhatsApp</button>
-                <button type="button" id="btn-print-pdf" class="btn primary">🖨️ Imprimir PDF</button>
+        <div class="modal-content wide">
+            <button class="close-modal">✖</button>
+            <h2>Vista Previa del Reporte</h2>
+            <div id="report-preview" class="report-container"></div>
+            <div class="modal-actions">
+                <button id="btn-copy-whatsapp" class="btn-whatsapp">📋 Copiar para WhatsApp</button>
+                <button id="btn-print-pdf" class="btn-primary">🖨️ Imprimir PDF</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Configuración y Portabilidad -->
+    <!-- Modal Config -->
     <div id="modal-config" class="modal">
         <div class="modal-content">
-            <h3>Copia de Seguridad y Portabilidad</h3>
-            <p class="hint">Usa estas opciones para mover tu aplicación a otra carpeta o hacer una copia de tus
-                registros.</p>
-
-            <div class="config-actions">
-                <button id="btn-export-json" class="btn secondary">
-                    <span>📥</span> Exportar Datos (JSON)
-                </button>
+            <button class="close-modal">✖</button>
+            <h2>Copia de Seguridad</h2>
+            <p class="hint">Guarda tus datos o restáuralos desde un archivo JSON.</p>
+            <div class="backup-actions">
+                <button id="btn-export-json" class="btn-secondary">⬇️ Exportar Datos (JSON)</button>
                 <div class="import-zone">
-                    <p class="hint">Para restaurar o mover datos:</p>
-                    <input type="file" id="import-file" accept=".json" style="display: none;">
-                    <button id="btn-import-trigger" class="btn primary">
-                        <span>📤</span> Importar Datos (Seleccionar Archivo)
-                    </button>
+                    <button id="btn-import-trigger" class="btn-primary">⬆️ Importar Datos</button>
+                    <input type="file" id="import-file" accept="application/json" hidden>
                 </div>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn secondary close-modal">Cerrar</button>
             </div>
         </div>
     </div>
 
+    <!-- ===================== -->
+    <!-- SCRIPTS -->
+    <!-- ===================== -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="db.js"></script>
     <script src="app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js');
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker registrado'))
+                    .catch(err => console.error('Error SW:', err));
+            });
         }
     </script>
+
 </body>
 
 </html>

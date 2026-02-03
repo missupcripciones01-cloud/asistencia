@@ -99,7 +99,7 @@ function addZoomRow(name = '', connections = 1) {
         <td class="row-name">
             <input type="text" class="zoom-name nx-secure-input" value="${name}" 
                 placeholder="Nombre del asistente..." 
-                autocomplete="off" 
+                autocomplete="new-password" 
                 role="presentation"
                 autocorrect="off" 
                 autocapitalize="off" 
@@ -163,9 +163,10 @@ async function showSuggestions(input) {
         masterNamesCache = names.map(n => n.name).sort();
     }
 
+    const div = document.getElementById('custom-suggestions');
     const val = input.value.toLowerCase().trim();
     if (!val) {
-        div.style.display = 'none';
+        if (div) div.style.display = 'none';
         return;
     }
 
@@ -173,7 +174,7 @@ async function showSuggestions(input) {
         name.toLowerCase().includes(val)
     );
 
-    const div = document.getElementById('custom-suggestions');
+    div = document.getElementById('custom-suggestions');
     if (suggestions.length === 0) {
         div.style.display = 'none';
         return;
@@ -239,6 +240,7 @@ function setupNamesModal() {
     const modal = document.getElementById('modal-names');
     const btnOpen = document.getElementById('btn-open-names-modal');
     const btnSave = document.getElementById('btn-save-names');
+    const btnClear = document.getElementById('btn-clear-names');
     const textArea = document.getElementById('import-names-area');
 
     if (!btnOpen || !modal) return;
@@ -246,7 +248,6 @@ function setupNamesModal() {
     btnOpen.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log("Opening Names Modal");
         textArea.value = "";
         modal.style.display = 'flex';
     });
@@ -261,7 +262,7 @@ function setupNamesModal() {
 
         try {
             await saveMasterNames(names);
-            masterNamesCache = []; // Limpiar cache para forzar recarga
+            masterNamesCache = [];
             await updateSuggestions();
             modal.style.display = 'none';
             alert(`¡Se han importado ${names.length} nombres correctamente!`);
@@ -270,6 +271,17 @@ function setupNamesModal() {
             alert("Error al guardar los nombres.");
         }
     });
+
+    if (btnClear) {
+        btnClear.onclick = async () => {
+            if (confirm("¿Estás seguro de que quieres borrar TODOS los nombres guardados? Esto eliminará también los nombres que el programa 'aprendió' automáticamente.")) {
+                await clearMasterNames();
+                masterNamesCache = [];
+                alert("Base de nombres vaciada.");
+                modal.style.display = 'none';
+            }
+        };
+    }
 }
 
 // La función updateSuggestions ahora se gestiona en la sección de Sugerencias Personalizadas
