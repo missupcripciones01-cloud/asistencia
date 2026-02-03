@@ -397,14 +397,17 @@ textarea:focus {
 /* Suggestions Dropdown */
 .suggestions-box {
     position: fixed;
-    background: var(--bg-card);
+    background: #1e293b;
+    /* Solid high contrast */
     border: 1px solid var(--accent);
     border-radius: 12px;
-    z-index: 3000;
+    z-index: 5000;
+    /* Max priority */
     max-height: 250px;
     overflow-y: auto;
     width: auto;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    min-width: 150px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
     display: none;
 }
 

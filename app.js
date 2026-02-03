@@ -158,15 +158,18 @@ function nxCalculateTotals() {
 let masterNamesCache = [];
 
 async function showSuggestions(input) {
+    const div = document.getElementById('custom-suggestions');
+    if (!div) return;
+
     if (masterNamesCache.length === 0) {
         const names = await getMasterNames();
         masterNamesCache = names.map(n => n.name).sort();
+        console.log("Cache de nombres cargado:", masterNamesCache.length);
     }
 
-    const div = document.getElementById('custom-suggestions');
     const val = input.value.toLowerCase().trim();
     if (!val) {
-        if (div) div.style.display = 'none';
+        div.style.display = 'none';
         return;
     }
 
@@ -174,7 +177,6 @@ async function showSuggestions(input) {
         name.toLowerCase().includes(val)
     );
 
-    div = document.getElementById('custom-suggestions');
     if (suggestions.length === 0) {
         div.style.display = 'none';
         return;
@@ -185,18 +187,18 @@ async function showSuggestions(input) {
         const item = document.createElement('div');
         item.className = 'suggestion-item';
         item.textContent = name;
-        item.onclick = () => {
+        item.addEventListener('click', () => {
             input.value = name;
             nxCalculateTotals();
             hideSuggestions();
-        };
+        });
         div.appendChild(item);
     });
 
     const rect = input.getBoundingClientRect();
     div.style.left = `${rect.left}px`;
-    div.style.top = `${rect.bottom}px`; // Eliminado window.scrollY porque el contenedor es fixed
-    div.style.width = `${rect.width}px`;
+    div.style.top = `${rect.bottom + 5}px`; // Un pequeño respiro de 5px
+    div.style.minWidth = `${rect.width}px`;
     div.style.display = 'block';
 }
 
