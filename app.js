@@ -99,14 +99,15 @@ function addZoomRow(name = '', connections = 1) {
         <td class="row-name">
             <input type="text" class="zoom-name nx-secure-input" value="${name}" 
                 placeholder="Nombre del asistente..." 
-                autocomplete="new-password" 
+                autocomplete="off" 
+                role="presentation"
                 autocorrect="off" 
                 autocapitalize="off" 
                 spellcheck="false"
                 data-lpignore="true">
         </td>
         <td class="row-count">
-            <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="new-password">
+            <input type="number" class="zoom-count" min="1" value="${connections}" autocomplete="off">
         </td>
         <td>
             <button class="btn-delete" title="Eliminar">🗑️</button>
@@ -162,7 +163,12 @@ async function showSuggestions(input) {
         masterNamesCache = names.map(n => n.name).sort();
     }
 
-    const val = input.value.toLowerCase();
+    const val = input.value.toLowerCase().trim();
+    if (!val) {
+        div.style.display = 'none';
+        return;
+    }
+
     const suggestions = masterNamesCache.filter(name =>
         name.toLowerCase().includes(val)
     );
@@ -255,6 +261,7 @@ function setupNamesModal() {
 
         try {
             await saveMasterNames(names);
+            masterNamesCache = []; // Limpiar cache para forzar recarga
             await updateSuggestions();
             modal.style.display = 'none';
             alert(`¡Se han importado ${names.length} nombres correctamente!`);

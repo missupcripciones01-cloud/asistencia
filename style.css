@@ -434,22 +434,34 @@ td {
     font-weight: 800;
 }
 
-/* Scrollbar Customization */
-::-webkit-scrollbar {
-    width: 8px;
+/* Custom Suggestions (Privacy Overhaul) */
+.custom-suggestions {
+    position: fixed;
+    background: #1e293b;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
 }
 
-::-webkit-scrollbar-track {
-    background: var(--bg-main);
+.suggestion-item {
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    color: white;
+    font-size: 0.9rem;
+    transition: background 0.2s;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #334155;
-    border-radius: 4px;
+.suggestion-item:last-child {
+    border-bottom: none;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+.suggestion-item:hover {
+    background: var(--accent);
 }
 
 /* Modal Styles */
