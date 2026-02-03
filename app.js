@@ -2,6 +2,9 @@ let annualChart = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Inicializar UI inmediatamente para que los botones respondan
+    console.log("App Initializing...");
+
+    // Capturar clics de navegación y modales de forma robusta
     setupNavigation();
     setupNamesModal();
     setupConfigModal();
@@ -16,29 +19,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initDB();
         await updateSuggestions();
 
-        // Inicializar con la fecha de hoy
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('meeting-date').value = today;
         await loadDateData(today);
+        console.log("App Ready");
     } catch (err) {
         console.error("Fallo en la inicialización:", err);
-        document.getElementById('db-status').textContent = "Error de Sistema";
+        const statusEl = document.getElementById('db-status');
+        if (statusEl) statusEl.textContent = "Error de Sistema";
     }
 });
 
 // --- Navegación ---
 function setupNavigation() {
-    // Solo actuar sobre botones que tienen data-tab (las pestañas reales)
     document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
-        btn.onclick = async () => {
+        btn.addEventListener('click', async (e) => {
             const tabId = btn.getAttribute('data-tab');
             if (!tabId) return;
 
-            // Limpiar estados activos de pestañas
+            console.log("Switching to tab:", tabId);
+
+            // Interface Reset
             document.querySelectorAll('.nav-item[data-tab]').forEach(nav => nav.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
 
-            // Activar nueva pestaña
+            // Set Active
             btn.classList.add('active');
             const targetTab = document.getElementById(tabId);
             if (targetTab) targetTab.classList.add('active');
@@ -46,7 +51,7 @@ function setupNavigation() {
             if (tabId === 'evolution-tab') {
                 await renderEvolutionChart();
             }
-        };
+        });
     });
 }
 
@@ -230,12 +235,17 @@ function setupNamesModal() {
     const btnSave = document.getElementById('btn-save-names');
     const textArea = document.getElementById('import-names-area');
 
-    btnOpen.onclick = () => {
+    if (!btnOpen || !modal) return;
+
+    btnOpen.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Opening Names Modal");
         textArea.value = "";
         modal.style.display = 'flex';
-    };
+    });
 
-    btnSave.onclick = async () => {
+    btnSave.addEventListener('click', async () => {
         const text = textArea.value;
         const names = text.split('\n')
             .map(n => n.trim())
@@ -252,7 +262,7 @@ function setupNamesModal() {
             console.error(err);
             alert("Error al guardar los nombres.");
         }
-    };
+    });
 }
 
 // La función updateSuggestions ahora se gestiona en la sección de Sugerencias Personalizadas
@@ -466,9 +476,16 @@ function setupConfigModal() {
     const btnImportTrigger = document.getElementById('btn-import-trigger');
     const importFile = document.getElementById('import-file');
 
-    btnOpen.onclick = () => modal.style.display = 'flex';
+    if (!btnOpen || !modal) return;
 
-    btnExport.onclick = async () => {
+    btnOpen.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Opening Config Modal");
+        modal.style.display = 'flex';
+    });
+
+    btnExport.addEventListener('click', async () => {
         const data = await exportData();
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -479,9 +496,9 @@ function setupConfigModal() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    };
+    });
 
-    btnImportTrigger.onclick = () => importFile.click();
+    btnImportTrigger.addEventListener('click', () => importFile.click());
 
     importFile.onchange = async (e) => {
         const file = e.target.files[0];
