@@ -28,14 +28,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // --- Navegación ---
 function setupNavigation() {
+    // Solo actuar sobre botones que tienen data-tab (las pestañas reales)
     document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
         btn.onclick = async () => {
             const tabId = btn.getAttribute('data-tab');
             if (!tabId) return;
 
-            document.querySelectorAll('.nav-item[data-tab], .tab-content').forEach(el => el.classList.remove('active'));
+            // Limpiar estados activos de pestañas
+            document.querySelectorAll('.nav-item[data-tab]').forEach(nav => nav.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+
+            // Activar nueva pestaña
             btn.classList.add('active');
-            document.getElementById(tabId).classList.add('active');
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.add('active');
 
             if (tabId === 'evolution-tab') {
                 await renderEvolutionChart();
@@ -177,7 +183,7 @@ async function showSuggestions(input) {
 
     const rect = input.getBoundingClientRect();
     div.style.left = `${rect.left}px`;
-    div.style.top = `${rect.bottom + window.scrollY}px`;
+    div.style.top = `${rect.bottom}px`; // Eliminado window.scrollY porque el contenedor es fixed
     div.style.width = `${rect.width}px`;
     div.style.display = 'block';
 }

@@ -637,7 +637,7 @@ td {
 }
 
 /* --- MOBILE OVERHAUL (Privacidad y Diseño) --- */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 1024px) {
     body {
         overflow-y: auto !important;
         height: auto !important;
@@ -648,6 +648,7 @@ td {
         flex-direction: column !important;
         height: auto !important;
         min-height: 100vh;
+        overflow-y: visible !important;
     }
 
     .sidebar {
@@ -655,44 +656,47 @@ td {
         height: auto !important;
         padding: 1rem !important;
         border-right: none !important;
-        border-bottom: 1px solid var(--border) !important;
+        border-bottom: 2px solid var(--accent) !important;
         position: relative !important;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
     }
 
     .sidebar-header h2 {
         text-align: center;
         margin-bottom: 1rem !important;
-        font-size: 1.25rem;
+        font-size: 1.5rem;
     }
 
     .side-nav {
         display: grid !important;
         grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
+        gap: 0.75rem;
     }
 
     .nav-item {
-        padding: 0.7rem !important;
+        padding: 0.85rem !important;
         margin-bottom: 0 !important;
-        font-size: 0.8rem !important;
+        font-size: 0.9rem !important;
         justify-content: center;
+        text-align: center;
     }
 
     .main-content {
-        padding: 1rem !important;
+        padding: 1.5rem 1rem !important;
         width: 100% !important;
+        overflow-y: visible !important;
     }
 
     .hero-banner {
-        height: 150px !important;
-        margin-bottom: 1.5rem !important;
+        height: 180px !important;
+        margin-bottom: 2rem !important;
+        border-radius: 16px;
     }
 
     .section-header {
         flex-direction: column !important;
         align-items: center !important;
-        gap: 1rem;
+        gap: 1.5rem;
     }
 
     .summary-cards {
@@ -704,21 +708,12 @@ td {
 
     .sum-card {
         padding: 0.75rem 0.25rem !important;
-        align-items: center;
-        text-align: center;
-    }
-
-    .sum-card .value {
-        font-size: 1.25rem !important;
+        min-width: 0 !important;
     }
 
     .entry-grid {
         grid-template-columns: 1fr !important;
-        gap: 1rem !important;
-    }
-
-    .card {
-        padding: 1.25rem !important;
+        gap: 1.5rem !important;
     }
 }
 
