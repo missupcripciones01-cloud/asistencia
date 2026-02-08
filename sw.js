@@ -1,21 +1,10 @@
-const CACHE_NAME = 'attendance-master-v1';
-const ASSETS = [
-    './',
-    './index.html',
-    './style.css',
-    './db.js',
-    './app.js',
-    'https://cdn.jsdelivr.net/npm/chart.js'
-];
+const CACHE_NAME = 'registro-horas-v1';
+const ASSETS = ['./', './index.html', './styles.css', './app.js', './app.webmanifest'];
 
-self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-    );
+self.addEventListener('install', e => {
+    e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
 });
 
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request).then((response) => response || fetch(event.request))
-    );
+self.addEventListener('fetch', e => {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });

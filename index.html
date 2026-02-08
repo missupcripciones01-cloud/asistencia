@@ -1,224 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>AttendanceMaster | Gestión Profesional</title>
-
-    <!-- Responsive -->
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
-
-    <!-- iOS PWA -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="AttendanceMaster">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Estilos -->
-    <link rel="stylesheet" href="style.css">
-</head>
-
-<body>
-
-    <!-- ===================== -->
-    <!-- HEADER / NAVEGACIÓN -->
-    <!-- ===================== -->
-    <header class="app-header">
-        <div class="header-container">
-            <h1>Attendance<span>Master</span></h1>
-            <nav class="nav-bar">
-                <button class="nav-item active" data-tab="attendance-tab">Asistencia</button>
-                <button class="nav-item" data-tab="evolution-tab">Evolución</button>
-                <button class="nav-item" data-tab="config-tab">Configuración</button>
-            </nav>
-        </div>
-    </header>
-
-    <!-- ===================== -->
-    <!-- CONTENIDO PRINCIPAL -->
-    <!-- ===================== -->
-    <main class="app-main">
-
-        <!-- TAB ASISTENCIA -->
-        <section id="attendance-tab" class="tab-content active">
-
-            <div class="registration-header card">
-                <!-- Fecha -->
-                <div class="field-group">
-                    <label for="meeting-date">Fecha de la reunión</label>
-                    <input type="date" id="meeting-date">
-                </div>
-
-                <!-- Presencial -->
-                <div class="field-group">
-                    <label for="private-attendance-total">Asistencia presencial</label>
-                    <input type="number" id="private-attendance-total" min="0" autocomplete="new-password"
-                        autocorrect="off" autocapitalize="off" spellcheck="false">
-                </div>
-            </div>
-
-            <!-- Zoom -->
-            <div class="zoom-section card">
-                <div class="section-title">
-                    <h2>Asistencia por Zoom</h2>
-                    <button id="btn-add-zoom" class="btn-secondary">+ Añadir conexión</button>
-                </div>
-
-                <div class="table-wrapper">
-                    <table class="zoom-table">
-                        <thead>
-                            <tr>
-                                <th>Nombre del Asistente</th>
-                                <th width="100">Cantidad</th>
-                                <th width="50"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="zoom-body"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Totales y Acción -->
-            <div class="footer-actions">
-                <div class="totals-box card">
-                    <div class="total-item">Presencial: <strong id="val-presencial">0</strong></div>
-                    <div class="total-item">Zoom: <strong id="val-zoom">0</strong></div>
-                    <div class="total-item total-final">Total: <strong id="val-total">0</strong></div>
-                </div>
-
-                <button id="btn-save-all" class="btn-primary">💾 Guardar Registro Diario</button>
-            </div>
-
-        </section>
-
-        <!-- TAB EVOLUCIÓN -->
-        <section id="evolution-tab" class="tab-content">
-            <div class="chart-section card">
-                <h2>Tendencia de Asistencia</h2>
-                <div class="chart-container">
-                    <canvas id="annual-evolution-chart"></canvas>
-                </div>
-            </div>
-
-            <div class="stats-box">
-                <div class="stat-card card">
-                    <span class="label">Máximo Asistentes</span>
-                    <strong id="stat-max">0</strong>
-                </div>
-                <div class="stat-card card">
-                    <span class="label">Promedio Mensual</span>
-                    <strong id="stat-avg">0</strong>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB CONFIGURACIÓN -->
-        <section id="config-tab" class="tab-content">
-            <div class="config-grid">
-                <div class="config-card card">
-                    <h3>👥 Base de Datos</h3>
-                    <p>Gestiona la lista maestra de nombres para sugerencias automáticas.</p>
-                    <button id="btn-open-names-modal" class="btn-secondary">👤 Gestionar Nombres</button>
-                </div>
-
-                <div class="config-card card">
-                    <h3>📄 Reportes y WhatsApp</h3>
-                    <p>Genera el resumen profesional para imprimir o compartir.</p>
-                    <button id="btn-open-report" class="btn-secondary">📄 Generar Reporte</button>
-                </div>
-
-                <div class="config-card card">
-                    <h3>⚙️ Portabilidad</h3>
-                    <p>Exporta o importa tus datos para usarlos en otros dispositivos.</p>
-                    <button id="btn-open-config-modal" class="btn-secondary">⚙️ Copia y Portabilidad</button>
-                </div>
-            </div>
-
-            <div class="db-info">
-                <small id="db-status">Almacenamiento Local Activo - Preparado</small>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- ===================== -->
-    <!-- SUGERENCIAS -->
-    <!-- ===================== -->
-    <div id="custom-suggestions" class="suggestions-box"></div>
-
-    <!-- ===================== -->
-    <!-- MODALES -->
-    <!-- ===================== -->
-
-    <!-- Modal Nombres -->
-    <div id="modal-names" class="modal">
-        <div class="modal-content wide">
-            <button class="close-modal">✖</button>
-            <h2>Gestión Maestra de Nombres</h2>
-            <p class="hint">Pega aquí los nombres (uno por línea).</p>
-            <textarea id="import-names-area" rows="10" placeholder="Ej:&#10;Juan Perez&#10;Maria Garcia"></textarea>
-            <div class="modal-actions">
-                <button id="btn-clear-names" class="btn-danger">🗑️ Borrar Todo</button>
-                <button id="btn-save-names" class="btn-primary">Guardar Nombres</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Reporte -->
-    <div id="modal-report" class="modal">
-        <div class="modal-content wide">
-            <button class="close-modal">✖</button>
-            <h2>Vista Previa del Reporte</h2>
-            <div id="report-preview" class="report-container"></div>
-            <div class="modal-actions">
-                <button id="btn-copy-whatsapp" class="btn-whatsapp">📋 Copiar para WhatsApp</button>
-                <button id="btn-print-pdf" class="btn-primary">🖨️ Imprimir PDF</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Config -->
-    <div id="modal-config" class="modal">
-        <div class="modal-content">
-            <button class="close-modal">✖</button>
-            <h2>Copia de Seguridad</h2>
-            <p class="hint">Guarda tus datos o restáuralos desde un archivo JSON.</p>
-            <div class="backup-actions">
-                <button id="btn-export-json" class="btn-secondary">⬇️ Exportar Datos (JSON)</button>
-                <div class="import-zone">
-                    <button id="btn-import-trigger" class="btn-primary">⬆️ Importar Datos</button>
-                    <input type="file" id="import-file" accept="application/json" hidden>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== -->
-    <!-- SCRIPTS -->
-    <!-- ===================== -->
+    <title>Registro de Horas</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="app.webmanifest">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="db.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Registro de Horas</h1>
+            <div class="stats">
+                <div class="stat-card">
+                    <span id="month-hours">0</span>
+                    <span>/55h mes</span>
+                </div>
+                <div class="stat-card">
+                    <span id="year-hours">0</span>
+                    <span>/600h año</span>
+                </div>
+                <div class="stat-card">
+                    <span id="courses-count">0</span>
+                    <span>cursos</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="monthly">Mensual</button>
+                <button class="tab-btn" data-tab="annual">Anual</button>
+                <button class="tab-btn" data-tab="courses">Cursos</button>
+            </div>
+
+            <div class="tab-content active" id="monthly-tab">
+                <div class="chart-container">
+                    <canvas id="monthly-chart"></canvas>
+                </div>
+                <button id="add-hour-btn" class="action-btn">+ Añadir horas</button>
+                <h3>Últimos registros</h3>
+                <ul id="hours-list" class="data-list"></ul>
+            </div>
+
+            <div class="tab-content" id="annual-tab">
+                <div class="chart-container">
+                    <canvas id="annual-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="tab-content" id="courses-tab">
+                <button id="add-course-btn" class="action-btn">+ Añadir curso</button>
+                <ul id="courses-list" class="data-list"></ul>
+            </div>
+            
+            <div class="sync-actions">
+                <button id="export-btn" class="secondary-btn">📤 Exportar copia (iCloud)</button>
+                <input type="file" id="import-input" style="display:none" accept=".json">
+                <button id="import-btn" class="secondary-btn">📥 Importar y Sincronizar</button>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="hour-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('hour-modal')">&times;</span>
+            <h2>Registrar Horas</h2>
+            <input type="date" id="hour-date" required>
+            <input type="number" id="hour-amount" placeholder="Horas (ej: 4.5)" min="0" step="0.5" required>
+            <textarea id="hour-notes" placeholder="Notas opcionales..."></textarea>
+            <button id="save-hour-btn" class="save-btn">Guardar Registro</button>
+        </div>
+    </div>
+
+    <div class="modal" id="course-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('course-modal')">&times;</span>
+            <h2>Añadir Curso</h2>
+            <input type="number" id="course-name" placeholder="Número de curso" required>
+            <input type="date" id="course-date" required>
+            <button id="save-course-btn" class="save-btn">Guardar Curso</button>
+        </div>
+    </div>
+
     <script src="app.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('Service Worker registrado'))
-                    .catch(err => console.error('Error SW:', err));
-            });
-        }
-    </script>
-
 </body>
-
 </html>
